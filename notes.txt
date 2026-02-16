@@ -1,0 +1,84 @@
+SNAP (Stanford Network Analysis Project) Facebook dataset.
+
+If this is indeed the SNAP dataset, the graph data consists of:
+
+Nodes: Each number represents a unique user (anonymized/renamed to an integer ID).
+Edges: Each line represents a friendship. If you see 0 1, it means user 0 is friends with user 1.
+Undirected: In Facebook, friendships are mutual. If 0 is friends with 1, then 1 is friends with 0. The file usually lists edges only once (e.g., 0 1 appears, but 1 0 might not be explicitly listed, though the relationship implies it).
+
+
+What is Community Detection? (In simple words)
+
+Community detection means:
+
+Finding groups of nodes (users) that are more connected to each other than to the rest of the network.
+
+In social networks:
+
+A community = friend group / circle / cluster
+
+People inside a community talk more with each other
+
+🔹 Real-life example (very intuitive 🇮🇳)
+
+Think of a college:
+
+CSE students mostly talk to CSE students
+
+ECE students mostly talk to ECE students
+
+Some students talk across branches, but mostly within
+
+ Each branch = community
+
+Community detection tries to automatically find these groups from connections only.
+
+🔹 Very Small Graph Example (6 nodes)
+
+Imagine this network:
+
+1 --- 2
+|     |
+3 --- 4
+
+5 --- 6
+
+Connections:
+
+Group 1: 1, 2, 3, 4 (all connected)
+
+Group 2: 5, 6 (connected only to each other)
+
+Visually:
+Community A: {1, 2, 3, 4}
+Community B: {5, 6}
+
+
+Even without knowing anything else:
+
+Nodes 1–4 form a tight group
+
+Nodes 5–6 form a separate group
+
+👉 Community detection finds this automatically
+
+🔹 How Label Propagation (our method) works on this example
+Step 1: Initial labels
+1→1, 2→2, 3→3, 4→4, 5→5, 6→6
+
+Step 2: Nodes look at neighbors
+
+Node 1 sees labels {2,3}
+
+Node 2 sees labels {1,4}
+
+They start copying the most common label
+
+After some iterations:
+1→1
+2→1
+3→1
+4→1
+
+5→5
+6→5
