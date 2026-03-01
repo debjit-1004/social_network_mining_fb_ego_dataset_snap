@@ -2,92 +2,45 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 
-from community_detection import label_propagation_raw
-from degree_centrality import degree_centrality_raw
+import utils
+import analysis
+import visualization
+import scalability
+from link_prediction import link_prediction_pipeline
 
+def main():
+    # load data
+    file_path = "facebook_combined.txt"
+    G = utils.load_graph(file_path)
 
-G = nx.read_edgelist(
-    "facebook_combined.txt",
-    nodetype=int
-)
+    print("total nodes:", G.number_of_nodes())
+    print("total edges:", G.number_of_edges())
 
-print("Total nodes:", G.number_of_nodes())
-print("Total edges:", G.number_of_edges())
+    # create subgraph (200 nodes)
+    nodes_count = int(os.getenv("subgraph_nodes", 200))
+    G_small = utils.get_subgraph(G, nodes_count)
 
+    print("subgraph nodes:", G_small.number_of_nodes())
+    print("subgraph edges:", G_small.number_of_edges())
 
-#   get 200 nodes
-nodes= os.getenv("subgraph_nodes")
-nodes_200 = list(G.nodes())[:1000]
-# GET ALL EDGES CONNECTING THESE 200 NODES
-G_small = G.subgraph(nodes_200)
+    # basic stats & plots
+    visualization.plot_degree_dist(G_small)
+    analysis.calculate_basic_stats(G_small)
 
-print("Subgraph nodes:", G_small.number_of_nodes())
-print("Subgraph edges:", G_small.number_of_edges())
+    # influence & centrality
+    analysis.find_top_influencers(G_small)
+    analysis.find_connectors(G_small)
 
+    # community detection
+    partition, num_comms = analysis.detect_communities(G_small)
+    visualization.plot_graph_communities(G_small, partition)
+    visualization.plot_basic_graph(G_small)
 
-degrees = [deg for _, deg in G_small.degree()]
+    # link prediction
+    link_prediction_pipeline(G_small)
 
-plt.hist(degrees, bins=20)
-plt.title("Degree Distribution of Facebook Subgraph")
-plt.xlabel("Degree")
-plt.ylabel("Frequency")
-plt.savefig("graph_degree.png")
-print("Graph degree saved to graph_degree.png")
+    # scalability
+    scalability.check_scalability(G)
 
-
-# nw density = 2*E/(N*(N-1))
-density = nx.density(G_small)
-print("Network Density:", round(density, 4))
-
-# nw visualise
-plt.figure(figsize=(8, 8))
-
-# 40 IS THE NODE SIZE, WITH_LABELS=False TO HIDE NODE LABELS
-nx.draw(G_small, node_size=40, with_labels=False)
-plt.title("Facebook Social Network (200 Nodes)")
-plt.savefig("graph.png")
-print("Graph visualization saved to graph.png")
-
-
-
-
-
-# Compute degree centrality
-degree_centrality = degree_centrality_raw(G_small)
-
-# TOP 5 INFLUENTIAL USERS
-
-top_5 = sorted(
-    degree_centrality.items(),
-    key=lambda x: x[1],
-    reverse=True
-)[:5]
-
-
-# def get_score(item_tuple):
-#     return item_tuple[1]  # Return the score
-
-# top_5 = sorted(degree_centrality.items(), key=get_score, reverse=True)
-
-print("Top 5 Influential Users (Raw Degree Centrality):")
-for node, score in top_5:
-    print(f"Node {node} : {score:.4f}")
-
-
-
-# Run community detection
-labels = label_propagation_raw(G_small)
-# Group nodes by community
-communities = {}
-for node, label in labels.items():
-    communities.setdefault(label, []).append(node)
-
-
-
-
-
-
-print("Number of communities detected:", len(communities))
-
-for i, (label, nodes) in enumerate(communities.items(), 1):
-    print(f"Community {i}: {len(nodes)} nodes")
+if __name__ == "__main__":
+    main()
